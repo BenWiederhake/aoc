@@ -2,22 +2,17 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
+using System.Linq;
 
 class Solver
 {
-    private List<List<int>> Table = new();
-    // Instead of storing the entire table in memory, we could just keep a running sum and product (separately) for each column.
-    // This would reduce memory consumption to O(width).
+    private List<string> Lines = new();
 
     public Solver() {
     }
 
-    public void DigestLine(string line) {
-        Table.Add(
-            line.Split(' ', StringSplitOptions.RemoveEmptyEntries)
-                .Select(Int32.Parse)
-                .ToList()
-        );
+    public void AddLine(string line) {
+        Lines.Add(line);
     }
 
     private long LongSum(long lhs, long rhs) {
@@ -28,16 +23,27 @@ class Solver
         return lhs * rhs;
     }
 
-    public long ComputeSubtotal(string op, int index) {
-        return Table.Select(l => (long)(l[index]))
-            .Aggregate(op == "+" ? LongSum : LongMult);
+    private int GetNumberInColumn(int col) {
+        var columnString = new String(Lines.SkipLast(1).Select(l => l[col]).ToArray());
+        //Console.WriteLine("Interpreting column >>" + columnString + "<<");
+        return Int32.Parse(columnString);
     }
 
-    public long ApplyOperations(string line) {
-        return line
-            .Split(' ', StringSplitOptions.RemoveEmptyEntries)
-            .Select((op, index) => ComputeSubtotal(op, index))
-            .Sum();
+    public long ComputeGrandTotal() {
+        int width = Lines[0].Count();
+        List<int> buf = new();
+        // Note: Could also go left-to-right, since multiplication and addition are commutative and associative.
+        long grandTotal = 0;
+        for (int col = width - 1; col >= 0; col -= 1) {
+            buf.Add(GetNumberInColumn(col));
+            char op = Lines.Last()[col];
+            if (op != ' ') {
+                grandTotal += buf.Select(v => (long)v).Aggregate(op == '+' ? LongSum : LongMult);
+                buf.Clear();
+                col -= 1; // Skip empty column
+            }
+        }
+        return grandTotal;
     }
 
     static void Main(string[] args)
@@ -48,16 +54,12 @@ class Solver
         }
         using (StreamReader sr = new StreamReader(filename))
         {
-            string previousLine = "";
             string line;
             Solver solver = new();
             while ((line = sr.ReadLine()) != null) {
-                if (previousLine != "") {
-                    solver.DigestLine(previousLine);
-                }
-                previousLine = line;
+                solver.AddLine(line);
             }
-            Console.WriteLine("grand total = " + solver.ApplyOperations(previousLine));
+            Console.WriteLine("grand total = " + solver.ComputeGrandTotal());
         }
     }
 }
