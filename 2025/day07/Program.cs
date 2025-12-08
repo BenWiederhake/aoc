@@ -6,41 +6,42 @@ using System.Linq;
 
 class Solver
 {
-    private bool[] Beams = {};
-    public int ObservedSplits { get; private set; }
+    private long[] BeamTimelines = {};
 
     public Solver() {
-        ObservedSplits = 0;
     }
 
     public void DigestLine(string line) {
-        if (Beams.Count() == 0) {
-            Beams = line.Select(ch => ch == 'S').ToArray();
+        if (BeamTimelines.Count() == 0) {
+            BeamTimelines = line.Select(ch => ch == 'S' ? 1L : 0).ToArray();
         } else {
             // Console.WriteLine("Potentially splitting across >>" + line + "<<");
             var w = line.Length;
-            var newBeams = new bool[w];
+            var newBeamTimelines = new long[w];
             // I'm currently running .NET 6.0, and don't want to update right now, in order to get today's AoC puzzle done same-day.
             // Otherwise, I would use the fancier `.Index()`:
             int col = 0;
             foreach (var ch in line) {
                 if (ch == '.') {
                     // pass-through beam
-                    newBeams[col] |= Beams[col];
-                } else if (Beams[col]) {
+                    newBeamTimelines[col] += BeamTimelines[col];
+                } else if (BeamTimelines[col] > 0) {
                     // beam is split
-                    ObservedSplits += 1;
                     if (col - 1 >= 0) {
-                        newBeams[col - 1] = true;
+                        newBeamTimelines[col - 1] += BeamTimelines[col];
                     }
                     if (col + 1 < w) {
-                        newBeams[col + 1] = true;
+                        newBeamTimelines[col + 1] += BeamTimelines[col];
                     }
                 }
                 col += 1;
             }
-            Beams = newBeams;
+            BeamTimelines = newBeamTimelines;
         }
+    }
+
+    public long TotalTimelines() {
+        return BeamTimelines.Sum();
     }
 
     static void Main(string[] args)
@@ -56,7 +57,7 @@ class Solver
             while ((line = sr.ReadLine()) != null) {
                 solver.DigestLine(line);
             }
-            Console.WriteLine("observed " + solver.ObservedSplits + " splits");
+            Console.WriteLine("observed " + solver.TotalTimelines() + " timelines");
         }
     }
 }
