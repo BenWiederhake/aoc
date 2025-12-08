@@ -118,7 +118,7 @@ class CircuitBuilder {
     public bool IsAllConnected() {
         for (; FirstPossiblyUnconnected < Parents.Length; FirstPossiblyUnconnected += 1) {
             if (Find(FirstPossiblyUnconnected) != Find(0)) {
-                Console.WriteLine($" (not connected yet; failed at {FirstPossiblyUnconnected}: Find(FirstPossiblyUnconnected) = {Find(FirstPossiblyUnconnected)})");
+                //Console.WriteLine($" (not connected yet; failed at {FirstPossiblyUnconnected}: Find(FirstPossiblyUnconnected) = {Find(FirstPossiblyUnconnected)})");
                 return false;
             }
         }
@@ -143,6 +143,7 @@ class Solver
     }
 
     public long LastConnectionXProduct() {
+        var watch1 = System.Diagnostics.Stopwatch.StartNew();
         // Enumerate *all* distances. This takes Theta(n^2) time, and there are faster ways to do this
         // since we just want to know the "top part" of this list, but this is good enough for n=1000.
         List<Distance> distances = new();
@@ -153,16 +154,23 @@ class Solver
                 distances.Add(new Distance(distanceSq, i, j));
             }
         }
-        Console.WriteLine("Computed " + distances.Count() + " distance objects.");
+        watch1.Stop();
+        Console.WriteLine($"Computed {distances.Count()} distance objects in {watch1.ElapsedMilliseconds} ms.");
 
         // Sort Distance objects by distance (squared):
+        var watch2 = System.Diagnostics.Stopwatch.StartNew();
         distances.Sort();
+        watch2.Stop();
+        Console.WriteLine($"Sorted in {watch2.ElapsedMilliseconds} ms");
 
         // "connect together the 1000 pairs of junction boxes which are closest together"
+        var watch3 = System.Diagnostics.Stopwatch.StartNew();
         CircuitBuilder cb = new(Points.Count());
         foreach (var distance in distances) {
             cb.EnsureConnected(distance.I, distance.J);
             if (cb.IsAllConnected()) {
+                watch3.Stop();
+                Console.WriteLine($"Build MST in {watch3.ElapsedMilliseconds} ms");
                 var pi = Points[distance.I];
                 var pj = Points[distance.J];
                 // Cast to long to avoid overflow errors.
@@ -182,13 +190,18 @@ class Solver
         }
         using (StreamReader sr = new StreamReader(filename))
         {
+            var watchParent = System.Diagnostics.Stopwatch.StartNew();
+            var watch = System.Diagnostics.Stopwatch.StartNew();
             string line;
             Solver solver = new();
             while ((line = sr.ReadLine()) != null) {
                 solver.DigestLine(line);
             }
-            Console.WriteLine("loaded " + solver.Points.Count() + " points");
+            watch.Stop();
+            Console.WriteLine($"read and parsed {solver.Points.Count()} points in {watch.ElapsedMilliseconds} ms");
             Console.WriteLine("result = " + solver.LastConnectionXProduct());
+            watchParent.Stop();
+            Console.WriteLine($"Should sum to {watchParent.ElapsedMilliseconds} ms");
         }
     }
 }
