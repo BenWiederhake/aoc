@@ -18,10 +18,7 @@ class Solver
             // Console.WriteLine("Potentially splitting across >>" + line + "<<");
             var w = line.Length;
             var newBeamTimelines = new long[w];
-            // I'm currently running .NET 6.0, and don't want to update right now, in order to get today's AoC puzzle done same-day.
-            // Otherwise, I would use the fancier `.Index()`:
-            int col = 0;
-            foreach (var ch in line) {
+            foreach (var (col, ch) in line.Index()) {
                 if (ch == '.') {
                     // pass-through beam
                     newBeamTimelines[col] += BeamTimelines[col];
@@ -34,7 +31,6 @@ class Solver
                         newBeamTimelines[col + 1] += BeamTimelines[col];
                     }
                 }
-                col += 1;
             }
             BeamTimelines = newBeamTimelines;
         }
