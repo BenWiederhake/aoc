@@ -58,6 +58,7 @@ class CircuitBuilder {
     // https://en.wikipedia.org/wiki/Disjoint-set_data_structure#Time_complexity
     private short[] Parents;
     private short[] NumChildren;
+    public short FirstPossiblyUnconnected;
 
     public CircuitBuilder(int numPoints) {
         Debug.Assert(numPoints <= Int16.MaxValue);
@@ -66,6 +67,7 @@ class CircuitBuilder {
         for (short i = 0; i < numPoints; i += 1) {
             Parents[i] = i;
         }
+        FirstPossiblyUnconnected = 1;
     }
 
     // Also known as "Union by size":
@@ -112,6 +114,16 @@ class CircuitBuilder {
         // given that we're about to cast it to long afterwards anyway.
         return 1 + NumChildren[point];
     }
+
+    public bool IsAllConnected() {
+        for (; FirstPossiblyUnconnected < Parents.Length; FirstPossiblyUnconnected += 1) {
+            if (Find(FirstPossiblyUnconnected) != Find(0)) {
+                Console.WriteLine($" (not connected yet; failed at {FirstPossiblyUnconnected}: Find(FirstPossiblyUnconnected) = {Find(FirstPossiblyUnconnected)})");
+                return false;
+            }
+        }
+        return true;
+    }
 }
 
 class Solver
@@ -130,7 +142,7 @@ class Solver
         ));
     }
 
-    public long ProductOfLargestThreeCircuits() {
+    public long LastConnectionXProduct() {
         // Enumerate *all* distances. This takes Theta(n^2) time, and there are faster ways to do this
         // since we just want to know the "top part" of this list, but this is good enough for n=1000.
         List<Distance> distances = new();
@@ -147,23 +159,19 @@ class Solver
         distances.Sort();
 
         // "connect together the 1000 pairs of junction boxes which are closest together"
-        const int NUM_CONNECTIONS = 1000;
-        // const int NUM_CONNECTIONS = 10;
         CircuitBuilder cb = new(Points.Count());
-        foreach (var distance in distances.Take(NUM_CONNECTIONS)) {
+        foreach (var distance in distances) {
             cb.EnsureConnected(distance.I, distance.J);
+            if (cb.IsAllConnected()) {
+                var pi = Points[distance.I];
+                var pj = Points[distance.J];
+                // Cast to long to avoid overflow errors.
+                return pi.X * 1L * pj.X;
+            }
         }
-
-        // Find the largest components:
-        List<long> circuitSizes = Enumerable.Range(0, Points.Count()).Select(cb.ComponentSizeIfRootOrZero).ToList();
-        // foreach ((int i, long size) in circuitSizes.Index()) {
-        //     Console.WriteLine($"circuit with root #{i} has size {size}");
-        // }
-        circuitSizes.Sort();
-        var n = circuitSizes.Count();
-        Console.WriteLine($"Largest components: {circuitSizes[n - 1]}, {circuitSizes[n - 2]}, {circuitSizes[n - 3]}");
-        // Console.WriteLine($"Smallest components: {circuitSizes[0]}, {circuitSizes[1]}, {circuitSizes[2]}");
-        return circuitSizes[n - 1] * circuitSizes[n - 2] * circuitSizes[n - 3];
+        Console.WriteLine("Error?! Connecting everything with everything should have resulted in a connected graph.");
+        Console.WriteLine(cb.FirstPossiblyUnconnected);
+        return -1;
     }
 
     static void Main(string[] args)
@@ -180,7 +188,7 @@ class Solver
                 solver.DigestLine(line);
             }
             Console.WriteLine("loaded " + solver.Points.Count() + " points");
-            Console.WriteLine("observed " + solver.ProductOfLargestThreeCircuits() + " timelines");
+            Console.WriteLine("result = " + solver.LastConnectionXProduct());
         }
     }
 }
