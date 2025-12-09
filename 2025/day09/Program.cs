@@ -38,14 +38,7 @@ class Solver
             }
         }
         var maxArea = points
-            .Select((p, i) =>
-                // Must make sure that the sequence contains *something*, so waste linear time here
-                // to include the area 1 "rectangle" with itself.
-                points[i..].Select(q =>
-                    p.AreaTo(q)
-                )
-                .Max()
-            )
+            .SelectMany((p, i) => points[(i + 1)..], (p, q) => p.AreaTo(q))
             .Max();
         Console.WriteLine($"Max area: {maxArea}");
     }
