@@ -7,4 +7,10 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <!-- See https://github.com/MarcelGosselin/LpSolveDotNet?tab=readme-ov-file#standard-usage for your OS's native name. -->
+    <!-- Or use just "LpSolveDotNet" for the generic implementation, which is probably slower or larger or dunno. -->
+    <PackageReference Include="LpSolveDotNet.Native.linux-x64" Version="4.1.0" />
+  </ItemGroup>
+
 </Project>
